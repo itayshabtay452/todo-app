@@ -1,44 +1,43 @@
 const express = require("express");
 const cors = require("cors");
+const { v4: uuidv4 } = require("uuid"); // ✅ מחולל מזהים ייחודיים (UUID)
+
 const app = express();
-app.use(cors({
-    origin: "*",
-    methods: ["GET", "POST", "DELETE"],
-    allowedHeaders: ["Content-Type"],
-}));
+
+app.use(cors());
 app.use(express.json());
 
 let tasks = [];
 
+// ✅ קבלת כל המשימות
 app.get("/tasks", (req, res) => {
     res.json(tasks);
 });
 
+// ✅ הוספת משימה (כל משימה תקבל `id` ייחודי)
 app.post("/tasks", (req, res) => {
-    const task = req.body.task;
-    if (!task) {
-        return res.status(400).json({ error: "Task is required" });
+    console.log("📩 בקשה התקבלה:", req.body);
+    const taskText = req.body.task;
+    if (!taskText) {
+        return res.status(400).json({ error: "❌ חסר תוכן למשימה" });
     }
-    tasks.push(task);
-    res.json(task);
+    const newTask = { id: uuidv4(), task: taskText }; // יצירת מזהה ייחודי
+    tasks.push(newTask);
+    res.json({ message: "✅ המשימה נוספה בהצלחה!", tasks });
 });
 
-app.delete("/tasks/:index", (req, res) => {
-    const index = req.params.index;
-    if (index < 0 || index >= tasks.length) {
-        return res.status(404).json({ error: "Task not found" });
+// ✅ מחיקת משימה לפי מזהה `id`
+app.delete("/tasks/:id", (req, res) => {
+    const { id } = req.params;
+    const taskIndex = tasks.findIndex(task => task.id === id);
+    if (taskIndex === -1) {
+        return res.status(404).json({ error: "❌ משימה לא נמצאה" });
     }
-    tasks.splice(index, 1);
-    res.json({ success: true });
+    tasks.splice(taskIndex, 1);
+    res.json({ message: "🗑️ המשימה נמחקה!", tasks });
 });
 
-
-// יצירת נתיב בסיסי
-app.get("/", (req, res) => {
-    res.send("🚀 השרת עובד בהצלחה!");
-});
-
-// הפעלת השרת
+// ✅ הפעלת השרת
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`✅ השרת מאזין בכתובת: http://localhost:${PORT}`);

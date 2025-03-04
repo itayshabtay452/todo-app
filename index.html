@@ -39,54 +39,62 @@
     <h1>Tasks list</h1>
     <input type="text" id="taskInput" placeholder="Enter a task">
     <button onclick="addTask()">add a task</button>
-    <ul id="tasksList"></ul>
+    <ul id="taskList"></ul>
     <script>
         // load server tasks
-        const apiURL = "http://localhost:3000/tasks";
+        const apiUrl = "http://localhost:3000/tasks";
 
 
         // load tasks
         async function loadTasks() {
-            const response = await fetch(apiURL);
+            const response = await fetch(apiUrl);
             const tasks = await response.json();
-            const tasksList = document.getElementById("tasksList");
-            tasksList.innerHTML = "";
-            tasks.forEach(task => {
+            console.log("📥 משימות שהתקבלו מהשרת:", tasks); // בדיקה אם הנתונים מגיעים
+
+            const taskList = document.getElementById("taskList");
+            taskList.innerHTML = ""; // מנקה את הרשימה
+
+            tasks.forEach((task) => {
                 const li = document.createElement("li");
-                li.innerHTML = `
-                    <span>${task.description}</span>
-                    <button class="delete" onclick="deleteTask(${task.id})">delete</button>
-                `;
-                tasksList.appendChild(li);
-            });
-        }
+                li.textContent = task.task; // ✅ הצגת שם המשימה
+
+                const deleteBtn = document.createElement("button");
+                deleteBtn.textContent = "❌";
+                deleteBtn.classList.add("delete");
+                deleteBtn.onclick = () => deleteTask(task.id); // ✅ מחיקה לפי `id`
+
+                li.appendChild(deleteBtn);
+                taskList.appendChild(li);
+    });
+}
+
 
         // add task
         async function addTask() {
             const taskInput = document.getElementById("taskInput");
-            const task = taskInput.value.trim();
-            if (!task) {
-                alert("Please enter a task");
-                return;
-            }
-            await fetch(apiURL, {
+            const taskText = taskInput.value.trim(); // לוקח את התוכן שהמשתמש הקליד
+            if (!taskText) return alert("❌ אנא הכנס משימה!");
+
+            console.log("📤 שולח לשרת:", { task:taskText }); // ✅ נבדוק אם הנתונים באמת נשלחים
+
+            await fetch(apiUrl, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ task })
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ task:taskText }) // ✅ שולח את הנתונים בפורמט JSON
             });
+
             taskInput.value = "";
             loadTasks();
-        }
+}
 
-        // delete task
         async function deleteTask(id) {
-            await fetch(`${apiURL}/${id}`, {
+            console.log(`🗑️ מוחק משימה עם ID: ${id}`);
+            await fetch(`${apiUrl}/${id}`, {
                 method: "DELETE"
             });
             loadTasks();
         }
+
 
         // load window
         window.onload = loadTasks;
